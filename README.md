@@ -1,0 +1,29 @@
+# Daymark
+
+A daily task tracker with a GitHub-style contribution calendar. Daymark uses
+Google sign-in through Supabase, stores each user's tasks securely in Postgres,
+and shows both overall and per-task completion history.
+
+## Local setup
+
+1. Create a free Supabase project.
+2. Run `supabase/schema.sql` in the Supabase SQL Editor.
+3. Enable Google in Supabase under Authentication → Providers.
+4. Copy `.env.example` to `.env.local` and add the project URL and publishable
+   key.
+5. Install dependencies with `pnpm install`.
+6. Start the site with `pnpm dev`.
+
+Without environment variables, the site opens in a fully interactive preview
+mode with sample data. Preview changes are intentionally not saved.
+
+## Google OAuth configuration
+
+Create a Web OAuth client in Google Cloud. Add the callback URL shown on the
+Supabase Google provider page as an authorized redirect URI. Add both the local
+site URL and deployed site URL to the Supabase redirect allow list.
+
+## Production
+
+The site is built with Vinext and produces a Cloudflare Worker-compatible
+bundle. Run `pnpm build` to create the production output.
