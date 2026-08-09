@@ -17,6 +17,27 @@ and shows both overall and per-task completion history.
 Without environment variables, the site opens in a fully interactive preview
 mode with sample data. Preview changes are intentionally not saved.
 
+## Project structure
+
+The application is organized by feature so authentication and task tracking can
+change independently:
+
+```text
+app/                         Route entry points and global page setup
+features/
+  auth/                      Google sign-in UI and session state
+  tasks/
+    components/              Task dashboard, lists, charts, and dialogs
+    data/                    Preview data
+    hooks/                   Task loading and mutation logic
+    lib/                     Date and activity calculations
+    model/                   Task and completion types
+shared/
+  components/                Reusable UI shared between features
+  lib/supabase/              Shared Supabase client
+supabase/                    Database schema and security policies
+```
+
 ## Google OAuth configuration
 
 Create a Web OAuth client in Google Cloud. Add the callback URL shown on the
