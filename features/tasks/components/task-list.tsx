@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { isGoalMet } from "../lib/activity";
 import type { Completion, Task } from "../model/types";
 
@@ -12,6 +15,8 @@ type TaskListProps = {
   onLogTime: (task: Task) => void;
 };
 
+type HabitFilter = "incomplete" | "completed" | "all";
+
 export function TaskList({
   tasks,
   todayCompletions,
@@ -22,10 +27,82 @@ export function TaskList({
   onSelectTask,
   onLogTime,
 }: TaskListProps) {
-  const completedCount = tasks.filter((task) => {
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [filter, setFilter] = useState<HabitFilter>("incomplete");
+  const isDone = (task: Task) => {
     const completion = todayCompletions.get(task.id);
     return completion ? isGoalMet(completion, task) : false;
-  }).length;
+  };
+  const completedCount = tasks.filter(isDone).length;
+  const normalizedQuery = tasks.length >= 6 ? query.trim().toLowerCase() : "";
+  const matchesQuery = (task: Task) =>
+    !normalizedQuery ||
+    `${task.title} ${task.note ?? ""}`.toLowerCase().includes(normalizedQuery);
+  const matchesFilter = (task: Task) =>
+    filter === "all" ||
+    (filter === "completed" ? isDone(task) : !isDone(task));
+  const filteredTasks = tasks
+    .filter((task) => matchesFilter(task) && matchesQuery(task))
+    .sort((first, second) => Number(isDone(first)) - Number(isDone(second)));
+  const visibleTasks =
+    expanded || normalizedQuery ? filteredTasks : filteredTasks.slice(0, 10);
+  const hiddenTaskCount = filteredTasks.length - visibleTasks.length;
+
+  const renderTask = (task: Task) => {
+    const completion = todayCompletions.get(task.id);
+    const done = completion ? isGoalMet(completion, task) : false;
+    const partial = Boolean(completion && !done);
+    const selected = selectedTaskId === task.id;
+    const status = completion
+      ? task.minimum_minutes
+        ? `${completion.actual_minutes} / ${task.minimum_minutes} min`
+        : `${completion.actual_minutes} min logged`
+      : task.minimum_minutes
+        ? `${task.minimum_minutes} min goal`
+        : "No minimum";
+
+    return (
+      <div
+        className={`task-row ${done ? "task-done" : ""} ${partial ? "task-partial" : ""} ${selected ? "task-selected" : ""}`}
+        key={task.id}
+      >
+        <button
+          aria-label={`Log time for ${task.title}`}
+          aria-pressed={done}
+          className="check-button"
+          onClick={() => onLogTime(task)}
+          type="button"
+        >
+          <span aria-hidden="true">{done ? "✓" : partial ? "·" : ""}</span>
+        </button>
+        <button
+          className="task-copy"
+          onClick={() => onSelectTask(task.id)}
+          type="button"
+        >
+          <strong>{task.title}</strong>
+          <span>{task.note || "Click to see this habit’s history"}</span>
+        </button>
+        <button
+          className="task-status"
+          onClick={() => onLogTime(task)}
+          type="button"
+        >
+          {status}
+        </button>
+        <button
+          aria-label={`Archive ${task.title}`}
+          className="more-button"
+          onClick={() => onArchiveTask(task)}
+          title="Archive habit"
+          type="button"
+        >
+          ···
+        </button>
+      </div>
+    );
+  };
 
   return (
     <section className="today-section">
@@ -57,62 +134,85 @@ export function TaskList({
           </button>
         </div>
       ) : (
-        <div className="task-list">
-          {tasks.map((task) => {
-            const completion = todayCompletions.get(task.id);
-            const done = completion ? isGoalMet(completion, task) : false;
-            const partial = Boolean(completion && !done);
-            const selected = selectedTaskId === task.id;
-            const status = completion
-              ? task.minimum_minutes
-                ? `${completion.actual_minutes} / ${task.minimum_minutes} min`
-                : `${completion.actual_minutes} min logged`
-              : task.minimum_minutes
-                ? `${task.minimum_minutes} min goal`
-                : "No minimum";
+        <>
+          <div
+            className={`task-list-tools ${tasks.length < 6 ? "filter-only" : ""}`}
+          >
+            {tasks.length >= 6 && (
+              <>
+                <label className="sr-only" htmlFor="habit-search">
+                  Search habits
+                </label>
+                <input
+                  id="habit-search"
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search habits"
+                  type="search"
+                  value={query}
+                />
+              </>
+            )}
+            <label className="sr-only" htmlFor="habit-filter">
+              Filter habits
+            </label>
+            <select
+              aria-label="Filter habits"
+              id="habit-filter"
+              onChange={(event) => {
+                setFilter(event.target.value as HabitFilter);
+                setExpanded(false);
+              }}
+              value={filter}
+            >
+              <option value="incomplete">Not completed</option>
+              <option value="completed">Completed</option>
+              <option value="all">All habits</option>
+            </select>
+          </div>
+          <div className="task-list-body">
+            {visibleTasks.length > 0 && (
+              <div className="task-list">{visibleTasks.map(renderTask)}</div>
+            )}
 
-            return (
-              <div
-                className={`task-row ${done ? "task-done" : ""} ${partial ? "task-partial" : ""} ${selected ? "task-selected" : ""}`}
-                key={task.id}
-              >
+            {hiddenTaskCount > 0 && !normalizedQuery && (
+              <div className="task-list-footer">
+                <span>{hiddenTaskCount} more habits</span>
                 <button
-                  aria-label={`Log time for ${task.title}`}
-                  aria-pressed={done}
-                  className="check-button"
-                  onClick={() => onLogTime(task)}
+                  className="list-toggle-button"
+                  onClick={() => setExpanded(true)}
                   type="button"
                 >
-                  <span aria-hidden="true">{done ? "✓" : partial ? "·" : ""}</span>
-                </button>
-                <button
-                  className="task-copy"
-                  onClick={() => onSelectTask(task.id)}
-                  type="button"
-                >
-                  <strong>{task.title}</strong>
-                  <span>{task.note || "Click to see this habit’s history"}</span>
-                </button>
-                <button
-                  className="task-status"
-                  onClick={() => onLogTime(task)}
-                  type="button"
-                >
-                  {status}
-                </button>
-                <button
-                  aria-label={`Archive ${task.title}`}
-                  className="more-button"
-                  onClick={() => onArchiveTask(task)}
-                  title="Archive habit"
-                  type="button"
-                >
-                  ···
+                  Show all
                 </button>
               </div>
-            );
-          })}
-        </div>
+            )}
+
+            {expanded && filteredTasks.length > 10 && !normalizedQuery && (
+              <div className="task-list-footer compact-footer">
+                <span>{filteredTasks.length} habits</span>
+                <button
+                  className="list-toggle-button"
+                  onClick={() => setExpanded(false)}
+                  type="button"
+                >
+                  Show less
+                </button>
+              </div>
+            )}
+
+            {filteredTasks.length === 0 && (
+              <div className="search-empty">
+                {normalizedQuery
+                  ? `No habits match “${query}”.`
+                  : filter === "completed"
+                    ? "No completed habits today."
+                    : filter === "incomplete"
+                      ? "All habits are completed."
+                      : "No habits to show."}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </section>
   );

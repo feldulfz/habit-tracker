@@ -38,6 +38,12 @@ export function DaymarkApp() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [loggingTask, setLoggingTask] = useState<Task | null>(null);
+  const [activityView, setActivityView] = useState<"overall" | "habit">(
+    "overall",
+  );
+  const [mobilePanel, setMobilePanel] = useState<"today" | "activity">(
+    "today",
+  );
   const today = localDate();
 
   const todayCompletions = useMemo(
@@ -132,20 +138,21 @@ export function DaymarkApp() {
           </div>
         )}
 
-        <section className="hero">
+        <section className="compact-hero">
           <div>
-            <p className="eyebrow">Your daily practice</p>
+            <p className="section-label">Your daily practice</p>
             <h1>Good afternoon.</h1>
-            <p className="hero-subtitle">
+            <p className="compact-hero-copy">
               Keep today simple. Mark the things that matter.
             </p>
           </div>
           <button
-            className="primary-button"
+            className="primary-button compact-add"
             onClick={() => setShowAddTask(true)}
             type="button"
           >
-            <span aria-hidden="true">＋</span> Add task
+            <span aria-hidden="true">＋</span>
+            Add habit
           </button>
         </section>
 
@@ -158,38 +165,100 @@ export function DaymarkApp() {
           </div>
         )}
 
-        <ActivityOverview
-          activity={overallActivity}
-          completedToday={completedToday}
-          lastSevenCount={lastSevenCount}
-          streak={streak}
-        />
+        <div className="mobile-workspace-tabs" role="tablist" aria-label="Dashboard sections">
+          <button
+            aria-selected={mobilePanel === "today"}
+            className={mobilePanel === "today" ? "active" : ""}
+            onClick={() => setMobilePanel("today")}
+            role="tab"
+            type="button"
+          >
+            Today
+          </button>
+          <button
+            aria-selected={mobilePanel === "activity"}
+            className={mobilePanel === "activity" ? "active" : ""}
+            onClick={() => setMobilePanel("activity")}
+            role="tab"
+            type="button"
+          >
+            Activity
+          </button>
+        </div>
 
-        <TaskList
-          loading={loading}
-          onAddTask={() => setShowAddTask(true)}
-          onArchiveTask={archiveTask}
-          onLogTime={setLoggingTask}
-          onSelectTask={setSelectedTaskId}
-          selectedTaskId={selectedTaskId}
-          tasks={tasks}
-          todayCompletions={todayCompletions}
-        />
+        <div className="workspace">
+          <div
+            className={`workspace-column habits-column ${mobilePanel !== "today" ? "mobile-hidden" : ""}`}
+          >
+            <TaskList
+              loading={loading}
+              onAddTask={() => setShowAddTask(true)}
+              onArchiveTask={archiveTask}
+              onLogTime={setLoggingTask}
+              onSelectTask={(taskId) => {
+                setSelectedTaskId(taskId);
+                setActivityView("habit");
+                setMobilePanel("activity");
+              }}
+              selectedTaskId={selectedTaskId}
+              tasks={tasks}
+              todayCompletions={todayCompletions}
+            />
+          </div>
 
-        {selectedTask && (
-          <TaskDetail
-            activity={taskActivity}
-            completionCount={
-              completions.filter((item) => item.task_id === selectedTask.id)
-                .length
-            }
-            onEdit={() => setEditingTask(selectedTask)}
-            task={selectedTask}
-            totalMinutes={completions
-              .filter((item) => item.task_id === selectedTask.id)
-              .reduce((sum, item) => sum + item.actual_minutes, 0)}
-          />
-        )}
+          <section
+            className={`workspace-column activity-workspace ${mobilePanel !== "activity" ? "mobile-hidden" : ""}`}
+          >
+            <div className="activity-tabs" role="tablist" aria-label="Activity view">
+              <button
+                aria-selected={activityView === "overall"}
+                className={`activity-tab ${activityView === "overall" ? "active" : ""}`}
+                onClick={() => setActivityView("overall")}
+                role="tab"
+                type="button"
+              >
+                Overall
+              </button>
+              {selectedTask && (
+                <button
+                  aria-selected={activityView === "habit"}
+                  className={`activity-tab habit-tab ${activityView === "habit" ? "active" : ""}`}
+                  onClick={() => setActivityView("habit")}
+                  role="tab"
+                  title={selectedTask.title}
+                  type="button"
+                >
+                  {selectedTask.title}
+                </button>
+              )}
+            </div>
+
+            <div className="activity-view">
+              {activityView === "habit" && selectedTask ? (
+                <TaskDetail
+                  activity={taskActivity}
+                  completionCount={
+                    completions.filter(
+                      (item) => item.task_id === selectedTask.id,
+                    ).length
+                  }
+                  onEdit={() => setEditingTask(selectedTask)}
+                  task={selectedTask}
+                  totalMinutes={completions
+                    .filter((item) => item.task_id === selectedTask.id)
+                    .reduce((sum, item) => sum + item.actual_minutes, 0)}
+                />
+              ) : (
+                <ActivityOverview
+                  activity={overallActivity}
+                  completedToday={completedToday}
+                  lastSevenCount={lastSevenCount}
+                  streak={streak}
+                />
+              )}
+            </div>
+          </section>
+        </div>
       </div>
 
       {showAddTask && (

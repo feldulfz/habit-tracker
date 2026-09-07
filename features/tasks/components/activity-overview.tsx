@@ -33,6 +33,7 @@ export function ActivityOverview({
           blockMargin={4}
           blockRadius={3}
           blockSize={12}
+          className="overall-calendar"
           colorScheme="light"
           data={activity}
           fontSize={12}
@@ -45,7 +46,7 @@ export function ActivityOverview({
           showTotalCount={false}
           showWeekdayLabels
           theme={{
-            light: ["#e8e7df", "#c6e3bf", "#79b985", "#36805b", "#174c39"],
+            light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
           }}
           weekStart={1}
         />

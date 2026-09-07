@@ -62,11 +62,11 @@ export function TaskDetail({
           showTotalCount={false}
           theme={{
             light: [
-              "#e8e7df",
-              "#c6e3bf",
-              "#79b985",
-              "#36805b",
-              "#174c39",
+              "#ebedf0",
+              "#9be9a8",
+              "#40c463",
+              "#30a14e",
+              "#216e39",
             ],
           }}
           weekStart={1}
