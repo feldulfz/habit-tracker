@@ -9,11 +9,13 @@ import {
   supabaseConfigured,
 } from "@/shared/lib/supabase/client";
 import { demoUser } from "../data/demo";
-import { createActivity, currentStreak } from "../lib/activity";
+import { createActivity, currentStreak, isGoalMet } from "../lib/activity";
 import { addDays, localDate } from "../lib/dates";
+import type { Task } from "../model/types";
 import { useTasks } from "../hooks/use-tasks";
 import { ActivityOverview } from "./activity-overview";
-import { AddTaskDialog } from "./add-task-dialog";
+import { LogTimeDialog } from "./log-time-dialog";
+import { TaskFormDialog } from "./task-form-dialog";
 import { TaskDetail } from "./task-detail";
 import { TaskList } from "./task-list";
 
@@ -28,36 +30,60 @@ export function DaymarkApp() {
     setError,
     setSelectedTaskId,
     addTask,
-    toggleToday,
+    updateTask,
+    saveToday,
+    removeToday,
     archiveTask,
   } = useTasks(session);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [loggingTask, setLoggingTask] = useState<Task | null>(null);
   const today = localDate();
 
-  const completedToday = useMemo(
+  const todayCompletions = useMemo(
     () =>
-      new Set(
+      new Map(
         completions
           .filter((item) => item.completion_date === today)
-          .map((item) => item.task_id),
+          .map((item) => [item.task_id, item]),
       ),
     [completions, today],
+  );
+  const tasksById = useMemo(
+    () => new Map(tasks.map((task) => [task.id, task])),
+    [tasks],
+  );
+  const completedToday = useMemo(
+    () =>
+      completions.filter(
+        (item) =>
+          item.completion_date === today &&
+          isGoalMet(item, tasksById.get(item.task_id)),
+      ).length,
+    [completions, tasksById, today],
   );
   const selectedTask =
     tasks.find((task) => task.id === selectedTaskId) ?? null;
   const overallActivity = useMemo(
-    () => createActivity(completions),
-    [completions],
+    () => createActivity(completions, tasks),
+    [completions, tasks],
   );
   const taskActivity = useMemo(
-    () => createActivity(completions, selectedTask?.id),
-    [completions, selectedTask?.id],
+    () => createActivity(completions, tasks, selectedTask?.id),
+    [completions, selectedTask?.id, tasks],
   );
-  const streak = useMemo(() => currentStreak(completions), [completions]);
+  const streak = useMemo(
+    () => currentStreak(completions, tasks),
+    [completions, tasks],
+  );
   const lastSevenCount = useMemo(() => {
     const cutoff = localDate(addDays(new Date(), -6));
-    return completions.filter((item) => item.completion_date >= cutoff).length;
-  }, [completions]);
+    return completions.filter(
+      (item) =>
+        item.completion_date >= cutoff &&
+        isGoalMet(item, tasksById.get(item.task_id)),
+    ).length;
+  }, [completions, tasksById]);
 
   if (!authReady) {
     return (
@@ -134,20 +160,20 @@ export function DaymarkApp() {
 
         <ActivityOverview
           activity={overallActivity}
-          completedToday={completedToday.size}
+          completedToday={completedToday}
           lastSevenCount={lastSevenCount}
           streak={streak}
         />
 
         <TaskList
-          completedToday={completedToday}
           loading={loading}
           onAddTask={() => setShowAddTask(true)}
           onArchiveTask={archiveTask}
+          onLogTime={setLoggingTask}
           onSelectTask={setSelectedTaskId}
-          onToggleTask={toggleToday}
           selectedTaskId={selectedTaskId}
           tasks={tasks}
+          todayCompletions={todayCompletions}
         />
 
         {selectedTask && (
@@ -157,15 +183,37 @@ export function DaymarkApp() {
               completions.filter((item) => item.task_id === selectedTask.id)
                 .length
             }
+            onEdit={() => setEditingTask(selectedTask)}
             task={selectedTask}
+            totalMinutes={completions
+              .filter((item) => item.task_id === selectedTask.id)
+              .reduce((sum, item) => sum + item.actual_minutes, 0)}
           />
         )}
       </div>
 
       {showAddTask && (
-        <AddTaskDialog
+        <TaskFormDialog
           onClose={() => setShowAddTask(false)}
           onSubmit={addTask}
+        />
+      )}
+
+      {editingTask && (
+        <TaskFormDialog
+          onClose={() => setEditingTask(null)}
+          onSubmit={(values) => updateTask(editingTask, values)}
+          task={editingTask}
+        />
+      )}
+
+      {loggingTask && (
+        <LogTimeDialog
+          completion={todayCompletions.get(loggingTask.id)}
+          onClose={() => setLoggingTask(null)}
+          onRemove={() => removeToday(loggingTask)}
+          onSubmit={(minutes) => saveToday(loggingTask, minutes)}
+          task={loggingTask}
         />
       )}
     </main>

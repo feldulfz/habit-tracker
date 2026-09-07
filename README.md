@@ -2,12 +2,14 @@
 
 A daily task tracker with a GitHub-style contribution calendar. Daymark uses
 Google sign-in through Supabase, stores each user's tasks securely in Postgres,
-and shows both overall and per-task completion history.
+and shows both overall and per-habit time history. Habits can have an optional
+minimum duration, while each daily log records the actual minutes spent.
 
 ## Local setup
 
 1. Create a free Supabase project.
-2. Run `supabase/schema.sql` in the Supabase SQL Editor.
+2. Run `supabase/schema.sql` in the Supabase SQL Editor. During development,
+   this script resets the Daymark tables before recreating them.
 3. Enable Google in Supabase under Authentication → Providers.
 4. Copy `.env.example` to `.env.local` and add the project URL and publishable
    key.
@@ -16,6 +18,13 @@ and shows both overall and per-task completion history.
 
 Without environment variables, the site opens in a fully interactive preview
 mode with sample data. Preview changes are intentionally not saved.
+
+## Duration intensity
+
+For habits with a minimum, the activity color represents how much of that goal
+was reached: under 25%, under 50%, under 100%, or goal met. For habits without
+a minimum, the four color levels represent under 15, under 30, under 60, and
+60 or more minutes.
 
 ## Project structure
 

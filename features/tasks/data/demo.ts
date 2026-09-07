@@ -11,6 +11,7 @@ export const demoTasks: Task[] = [
     user_id: "demo",
     title: "Move for 30 minutes",
     note: "Walk, run, stretch, or anything that gets you moving.",
+    minimum_minutes: 30,
     created_at: new Date(Date.now() - 56 * DAY_MS).toISOString(),
     archived_at: null,
   },
@@ -19,6 +20,7 @@ export const demoTasks: Task[] = [
     user_id: "demo",
     title: "Read 10 pages",
     note: "A small daily promise to yourself.",
+    minimum_minutes: 20,
     created_at: new Date(Date.now() - 43 * DAY_MS).toISOString(),
     archived_at: null,
   },
@@ -27,6 +29,7 @@ export const demoTasks: Task[] = [
     user_id: "demo",
     title: "Plan tomorrow",
     note: null,
+    minimum_minutes: null,
     created_at: new Date(Date.now() - 21 * DAY_MS).toISOString(),
     archived_at: null,
   },
@@ -46,6 +49,7 @@ export function makeDemoCompletions() {
           task_id: task.id,
           user_id: "demo",
           completion_date: date,
+          actual_minutes: 8 + ((offset + taskIndex * 11) % 58),
           completed_at: new Date().toISOString(),
         });
       }

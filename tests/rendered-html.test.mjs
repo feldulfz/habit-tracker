@@ -34,7 +34,7 @@ test("renders Daymark", async () => {
   );
   assert.match(html, /Daymark/);
   assert.match(html, /Your year in small wins/);
-  assert.match(html, /Today’s tasks/);
+  assert.match(html, /Today’s habits/);
   assert.doesNotMatch(html, /codex-preview/);
   assert.doesNotMatch(html, /react-loading-skeleton/);
 });

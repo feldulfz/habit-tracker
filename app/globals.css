@@ -449,6 +449,12 @@ textarea:focus-visible {
   background: var(--green);
 }
 
+.task-partial .check-button {
+  border-color: #79b985;
+  background: #c6e3bf;
+  color: var(--green);
+}
+
 .task-copy {
   display: flex;
   min-width: 0;
@@ -485,8 +491,18 @@ textarea:focus-visible {
 }
 
 .task-status {
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
   color: #87948c;
+  cursor: pointer;
   font-size: 11px;
+}
+
+.task-status:hover {
+  background: var(--green-pale);
+  color: var(--green);
 }
 
 .task-done .task-status {
@@ -569,6 +585,34 @@ textarea:focus-visible {
   font-size: 13px;
 }
 
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.detail-meta span {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.edit-button {
+  padding: 4px 8px;
+  border: 1px solid #cbd5cd;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.edit-button:hover {
+  border-color: #9dae9f;
+  color: var(--green);
+}
+
 .detail-count {
   display: flex;
   min-width: 105px;
@@ -583,8 +627,10 @@ textarea:focus-visible {
 }
 
 .detail-count span {
+  max-width: 150px;
   color: var(--ink-soft);
   font-size: 11px;
+  text-align: right;
 }
 
 .compact-calendar {
@@ -677,11 +723,78 @@ textarea:focus-visible {
   color: #99a39d;
 }
 
+.duration-input {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #cdd2cc;
+  border-radius: 9px;
+  background: white;
+}
+
+.duration-input:focus-within {
+  outline: 3px solid rgba(54, 128, 91, 0.28);
+  outline-offset: 2px;
+}
+
+.modal .duration-input input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+}
+
+.duration-input span {
+  padding: 0 13px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.duration-input-large input {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.field-hint {
+  margin: 7px 0 0;
+  color: #7d8982;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.time-modal {
+  width: min(540px, 100%);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 26px;
+}
+
+.split-actions {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.action-group {
+  display: flex;
+  gap: 10px;
+}
+
+.danger-button {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.danger-button:hover {
+  text-decoration: underline;
 }
 
 .cancel-button {
@@ -954,6 +1067,21 @@ textarea:focus-visible {
   .modal-actions {
     align-items: stretch;
     flex-direction: column-reverse;
+  }
+
+  .split-actions,
+  .action-group {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .action-group .primary-button {
+    width: 100%;
+  }
+
+  .detail-meta {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .modal-actions .primary-button {

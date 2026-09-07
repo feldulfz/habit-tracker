@@ -5,12 +5,16 @@ type TaskDetailProps = {
   task: Task;
   activity: Activity[];
   completionCount: number;
+  totalMinutes: number;
+  onEdit: () => void;
 };
 
 export function TaskDetail({
   task,
   activity,
   completionCount,
+  totalMinutes,
+  onEdit,
 }: TaskDetailProps) {
   return (
     <section className="task-detail">
@@ -22,11 +26,28 @@ export function TaskDetail({
             {task.note ||
               "Every filled square is a day you kept this promise."}
           </p>
+          <div className="detail-meta">
+            <span>
+              {task.minimum_minutes
+                ? `${task.minimum_minutes} minute daily minimum`
+                : "No daily minimum"}
+            </span>
+            <button className="edit-button" onClick={onEdit} type="button">
+              Edit habit
+            </button>
+          </div>
         </div>
         <div className="detail-count">
-          <strong>{completionCount}</strong>
-          <span>days marked</span>
+          <strong>{totalMinutes}</strong>
+          <span>minutes across {completionCount} logged days</span>
         </div>
+      </div>
+      <div className="legend" aria-label="Time intensity legend">
+        <span>Less time</span>
+        {[0, 1, 2, 3, 4].map((level) => (
+          <i className={`legend-cell level-${level}`} key={level} />
+        ))}
+        <span>More time</span>
       </div>
       <div className="calendar-wrap compact-calendar">
         <ActivityCalendar
@@ -42,9 +63,9 @@ export function TaskDetail({
           theme={{
             light: [
               "#e8e7df",
-              "#174c39",
-              "#174c39",
-              "#174c39",
+              "#c6e3bf",
+              "#79b985",
+              "#36805b",
               "#174c39",
             ],
           }}

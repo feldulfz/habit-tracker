@@ -8,7 +8,7 @@ import {
 } from "@/shared/lib/supabase/client";
 import { demoTasks, makeDemoCompletions } from "../data/demo";
 import { addDays, localDate } from "../lib/dates";
-import type { Completion, Task } from "../model/types";
+import type { Completion, Task, TaskValues } from "../model/types";
 
 export function useTasks(session: Session | null) {
   const [tasks, setTasks] = useState<Task[]>(
@@ -66,8 +66,8 @@ export function useTasks(session: Session | null) {
     loadData();
   }, [loadData]);
 
-  async function addTask(titleInput: string, noteInput: string) {
-    const title = titleInput.trim();
+  async function addTask(values: TaskValues) {
+    const title = values.title.trim();
     if (!title) return false;
 
     setError("");
@@ -76,7 +76,8 @@ export function useTasks(session: Session | null) {
         id: crypto.randomUUID(),
         user_id: "demo",
         title,
-        note: noteInput.trim() || null,
+        note: values.note.trim() || null,
+        minimum_minutes: values.minimumMinutes,
         created_at: new Date().toISOString(),
         archived_at: null,
       };
@@ -90,7 +91,8 @@ export function useTasks(session: Session | null) {
       .insert({
         user_id: session.user.id,
         title,
-        note: noteInput.trim() || null,
+        note: values.note.trim() || null,
+        minimum_minutes: values.minimumMinutes,
       })
       .select()
       .single();
@@ -105,7 +107,43 @@ export function useTasks(session: Session | null) {
     return true;
   }
 
-  async function toggleToday(task: Task) {
+  async function updateTask(task: Task, values: TaskValues) {
+    const title = values.title.trim();
+    if (!title) return false;
+
+    const updates = {
+      title,
+      note: values.note.trim() || null,
+      minimum_minutes: values.minimumMinutes,
+    };
+    setError("");
+
+    if (supabase && session) {
+      const { data, error: updateError } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", task.id)
+        .select()
+        .single();
+      if (updateError) {
+        setError(updateError.message);
+        return false;
+      }
+      setTasks((current) =>
+        current.map((item) => (item.id === task.id ? (data as Task) : item)),
+      );
+      return true;
+    }
+
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === task.id ? { ...item, ...updates } : item,
+      ),
+    );
+    return true;
+  }
+
+  async function saveToday(task: Task, actualMinutes: number) {
     const today = localDate();
     const existing = completions.find(
       (item) =>
@@ -116,7 +154,11 @@ export function useTasks(session: Session | null) {
     if (!supabase || !session) {
       setCompletions((current) =>
         existing
-          ? current.filter((item) => item.id !== existing.id)
+          ? current.map((item) =>
+              item.id === existing.id
+                ? { ...item, actual_minutes: actualMinutes }
+                : item,
+            )
           : [
               ...current,
               {
@@ -124,26 +166,31 @@ export function useTasks(session: Session | null) {
                 task_id: task.id,
                 user_id: "demo",
                 completion_date: today,
+                actual_minutes: actualMinutes,
                 completed_at: new Date().toISOString(),
               },
             ],
       );
-      return;
+      return true;
     }
 
     if (existing) {
-      const { error: deleteError } = await supabase
+      const { data, error: updateError } = await supabase
         .from("task_completions")
-        .delete()
-        .eq("id", existing.id);
-      if (deleteError) {
-        setError(deleteError.message);
-      } else {
-        setCompletions((current) =>
-          current.filter((item) => item.id !== existing.id),
-        );
+        .update({ actual_minutes: actualMinutes })
+        .eq("id", existing.id)
+        .select()
+        .single();
+      if (updateError) {
+        setError(updateError.message);
+        return false;
       }
-      return;
+      setCompletions((current) =>
+        current.map((item) =>
+          item.id === existing.id ? (data as Completion) : item,
+        ),
+      );
+      return true;
     }
 
     const { data, error: insertError } = await supabase
@@ -152,15 +199,44 @@ export function useTasks(session: Session | null) {
         task_id: task.id,
         user_id: session.user.id,
         completion_date: today,
+        actual_minutes: actualMinutes,
       })
       .select()
       .single();
 
     if (insertError) {
       setError(insertError.message);
-    } else {
-      setCompletions((current) => [...current, data as Completion]);
+      return false;
     }
+
+    setCompletions((current) => [...current, data as Completion]);
+    return true;
+  }
+
+  async function removeToday(task: Task) {
+    const today = localDate();
+    const existing = completions.find(
+      (item) =>
+        item.task_id === task.id && item.completion_date === today,
+    );
+    if (!existing) return true;
+    setError("");
+
+    if (supabase && session) {
+      const { error: deleteError } = await supabase
+        .from("task_completions")
+        .delete()
+        .eq("id", existing.id);
+      if (deleteError) {
+        setError(deleteError.message);
+        return false;
+      }
+    }
+
+    setCompletions((current) =>
+      current.filter((item) => item.id !== existing.id),
+    );
+    return true;
   }
 
   async function archiveTask(task: Task) {
@@ -191,7 +267,9 @@ export function useTasks(session: Session | null) {
     setError,
     setSelectedTaskId,
     addTask,
-    toggleToday,
+    updateTask,
+    saveToday,
+    removeToday,
     archiveTask,
   };
 }

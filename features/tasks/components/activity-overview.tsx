@@ -37,7 +37,7 @@ export function ActivityOverview({
           data={activity}
           fontSize={12}
           labels={{
-            totalCount: "{{count}} completions in the last year",
+            totalCount: "{{count}} minutes in the last year",
             legend: { less: "Less", more: "More" },
           }}
           maxLevel={4}
@@ -61,7 +61,7 @@ export function ActivityOverview({
         </div>
         <div>
           <strong>{lastSevenCount}</strong>
-          <span>marks this week</span>
+          <span>goals met this week</span>
         </div>
       </div>
     </section>
