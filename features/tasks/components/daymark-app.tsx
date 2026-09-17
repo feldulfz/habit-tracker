@@ -23,6 +23,7 @@ export function DaymarkApp() {
   const { session, authReady, authError, signIn, signOut } = useAuth();
   const {
     tasks,
+    archivedTasks,
     completions,
     selectedTaskId,
     loading,
@@ -34,10 +35,12 @@ export function DaymarkApp() {
     saveToday,
     removeToday,
     archiveTask,
+    restoreTask,
   } = useTasks(session);
   const [showAddTask, setShowAddTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [loggingTask, setLoggingTask] = useState<Task | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [activityView, setActivityView] = useState<"overall" | "habit">(
     "overall",
   );
@@ -117,14 +120,42 @@ export function DaymarkApp() {
             <span className="preview-pill">Preview mode</span>
           )}
           <span className="account-email">{email}</span>
-          <span className="avatar" aria-hidden="true">
-            {avatar ? <img alt="" src={avatar} /> : email[0].toUpperCase()}
-          </span>
-          {supabase && (
-            <button className="text-button" onClick={signOut} type="button">
-              Sign out
-            </button>
-          )}
+          <details className="account-menu">
+            <summary aria-label="Open account menu" className="account-trigger">
+              <span className="avatar" aria-hidden="true">
+                {avatar ? <img alt="" src={avatar} /> : email[0].toUpperCase()}
+              </span>
+            </summary>
+            <div className="account-popover">
+              <button className="account-menu-item" disabled type="button">
+                <span>Profile</span>
+                <small>Coming soon</small>
+              </button>
+              <button
+                className="account-menu-item"
+                onClick={(event) => {
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                  setShowArchived(true);
+                }}
+                type="button"
+              >
+                <span>Archived habits</span>
+                <small>{archivedTasks.length}</small>
+              </button>
+              {supabase && (
+                <>
+                  <div className="account-menu-divider" />
+                  <button
+                    className="account-menu-item"
+                    onClick={signOut}
+                    type="button"
+                  >
+                    Sign out
+                  </button>
+                </>
+              )}
+            </div>
+          </details>
         </div>
       </header>
 
@@ -284,6 +315,58 @@ export function DaymarkApp() {
           onSubmit={(minutes) => saveToday(loggingTask, minutes)}
           task={loggingTask}
         />
+      )}
+
+      {showArchived && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setShowArchived(false);
+          }}
+          role="presentation"
+        >
+          <section
+            aria-labelledby="archived-habits-title"
+            aria-modal="true"
+            className="modal archived-modal"
+            role="dialog"
+          >
+            <button
+              aria-label="Close archived habits"
+              className="modal-close"
+              onClick={() => setShowArchived(false)}
+              type="button"
+            >
+              ×
+            </button>
+            <p className="section-label">YOUR ARCHIVE</p>
+            <h2 id="archived-habits-title">Archived habits</h2>
+            <p className="modal-intro">
+              Restore a habit to return it to today’s list.
+            </p>
+            {archivedTasks.length === 0 ? (
+              <p className="archived-empty">No archived habits.</p>
+            ) : (
+              <div className="archived-list">
+                {archivedTasks.map((task) => (
+                  <div className="archived-row" key={task.id}>
+                    <div>
+                      <strong>{task.title}</strong>
+                      <span>{task.note || "No notes"}</span>
+                    </div>
+                    <button
+                      className="list-toggle-button"
+                      onClick={() => restoreTask(task)}
+                      type="button"
+                    >
+                      Restore
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       )}
     </main>
   );

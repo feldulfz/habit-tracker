@@ -14,6 +14,7 @@ export function useTasks(session: Session | null) {
   const [tasks, setTasks] = useState<Task[]>(
     supabaseConfigured ? [] : demoTasks,
   );
+  const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [completions, setCompletions] = useState<Completion[]>(
     supabaseConfigured ? [] : makeDemoCompletions(),
   );
@@ -33,7 +34,6 @@ export function useTasks(session: Session | null) {
       supabase
         .from("tasks")
         .select("*")
-        .is("archived_at", null)
         .order("created_at", { ascending: true }),
       supabase
         .from("task_completions")
@@ -49,8 +49,10 @@ export function useTasks(session: Session | null) {
           "Your tasks could not be loaded.",
       );
     } else {
-      const nextTasks = (taskResult.data ?? []) as Task[];
+      const allTasks = (taskResult.data ?? []) as Task[];
+      const nextTasks = allTasks.filter((task) => !task.archived_at);
       setTasks(nextTasks);
+      setArchivedTasks(allTasks.filter((task) => task.archived_at));
       setCompletions((completionResult.data ?? []) as Completion[]);
       setSelectedTaskId((current) =>
         nextTasks.some((task) => task.id === current)
@@ -242,10 +244,12 @@ export function useTasks(session: Session | null) {
   async function archiveTask(task: Task) {
     if (!window.confirm(`Archive “${task.title}”?`)) return;
 
+    const archivedAt = new Date().toISOString();
+
     if (supabase && session) {
       const { error: archiveError } = await supabase
         .from("tasks")
-        .update({ archived_at: new Date().toISOString() })
+        .update({ archived_at: archivedAt })
         .eq("id", task.id);
       if (archiveError) {
         setError(archiveError.message);
@@ -255,11 +259,45 @@ export function useTasks(session: Session | null) {
 
     const remaining = tasks.filter((item) => item.id !== task.id);
     setTasks(remaining);
+    setArchivedTasks((current) => [
+      ...current,
+      { ...task, archived_at: archivedAt },
+    ]);
     setSelectedTaskId(remaining[0]?.id ?? null);
+  }
+
+  async function restoreTask(task: Task) {
+    setError("");
+    let restoredTask: Task = { ...task, archived_at: null };
+
+    if (supabase && session) {
+      const { data, error: restoreError } = await supabase
+        .from("tasks")
+        .update({ archived_at: null })
+        .eq("id", task.id)
+        .select()
+        .single();
+      if (restoreError) {
+        setError(restoreError.message);
+        return;
+      }
+      restoredTask = data as Task;
+    }
+
+    setArchivedTasks((current) =>
+      current.filter((item) => item.id !== task.id),
+    );
+    setTasks((current) =>
+      [...current, restoredTask].sort((first, second) =>
+        first.created_at.localeCompare(second.created_at),
+      ),
+    );
+    setSelectedTaskId((current) => current ?? restoredTask.id);
   }
 
   return {
     tasks,
+    archivedTasks,
     completions,
     selectedTaskId,
     loading,
@@ -271,5 +309,6 @@ export function useTasks(session: Session | null) {
     saveToday,
     removeToday,
     archiveTask,
+    restoreTask,
   };
 }

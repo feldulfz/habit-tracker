@@ -160,6 +160,76 @@ textarea:focus-visible {
   object-fit: cover;
 }
 
+.account-menu {
+  position: relative;
+}
+
+.account-trigger {
+  display: block;
+  border-radius: 50%;
+  cursor: pointer;
+  list-style: none;
+}
+
+.account-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.account-trigger:hover .avatar,
+.account-menu[open] .avatar {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px var(--green-pale);
+}
+
+.account-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 12px 32px rgba(31, 35, 40, 0.16);
+}
+
+.account-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.account-menu-item:hover {
+  background: var(--paper);
+}
+
+.account-menu-item:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.account-menu-item small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.account-menu-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
+}
+
 .text-button {
   border: 0;
   background: none;
@@ -790,6 +860,53 @@ textarea:focus-visible {
   color: var(--ink-soft);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.archived-modal {
+  width: min(560px, 100%);
+}
+
+.archived-list {
+  max-height: min(420px, 55vh);
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.archived-row {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.archived-row > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archived-row strong,
+.archived-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.archived-row span,
+.archived-empty {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.archived-empty {
+  margin: 0;
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
+  text-align: center;
 }
 
 .modal form {
