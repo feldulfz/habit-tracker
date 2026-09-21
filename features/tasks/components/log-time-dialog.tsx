@@ -18,15 +18,18 @@ export function LogTimeDialog({
   onRemove,
   onSubmit,
 }: LogTimeDialogProps) {
-  const [actualMinutes, setActualMinutes] = useState(
-    completion?.actual_minutes.toString() ?? "",
+  const [hours, setHours] = useState(
+    completion ? Math.floor(completion.actual_minutes / 60).toString() : "",
+  );
+  const [minutes, setMinutes] = useState(
+    completion ? (completion.actual_minutes % 60).toString() : "",
   );
 
   async function submitTime(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const minutes = Math.round(Number(actualMinutes));
-    if (minutes < 1 || minutes > 1440) return;
-    if (await onSubmit(minutes)) onClose();
+    const totalMinutes = Math.round(Number(hours || 0) * 60 + Number(minutes || 0));
+    if (totalMinutes < 1 || totalMinutes > 1440) return;
+    if (await onSubmit(totalMinutes)) onClose();
   }
 
   async function removeTime() {
@@ -63,25 +66,50 @@ export function LogTimeDialog({
             : "This habit has no minimum. Every minute still adds to its activity color."}
         </p>
         <form onSubmit={submitTime}>
-          <label htmlFor="actual-minutes">Actual time spent</label>
-          <div className="duration-input duration-input-large">
-            <input
-              autoFocus
-              id="actual-minutes"
-              inputMode="numeric"
-              max={1440}
-              min={1}
-              onChange={(event) => setActualMinutes(event.target.value)}
-              placeholder={task.minimum_minutes?.toString() ?? "15"}
-              required
-              step={1}
-              type="number"
-              value={actualMinutes}
-            />
-            <span>minutes</span>
+          <label>Actual time spent</label>
+          <div className="time-input-grid">
+            <div>
+              <label htmlFor="actual-hours">Hours</label>
+              <div className="duration-input duration-input-large">
+                <input
+                  autoFocus
+                  id="actual-hours"
+                  inputMode="numeric"
+                  max={24}
+                  min={0}
+                  onChange={(event) => setHours(event.target.value)}
+                  placeholder={task.minimum_minutes
+                    ? Math.floor(task.minimum_minutes / 60).toString()
+                    : "0"}
+                  step={1}
+                  type="number"
+                  value={hours}
+                />
+                <span>hours</span>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="actual-minutes">Minutes</label>
+              <div className="duration-input duration-input-large">
+                <input
+                  id="actual-minutes"
+                  inputMode="numeric"
+                  max={59}
+                  min={0}
+                  onChange={(event) => setMinutes(event.target.value)}
+                  placeholder={task.minimum_minutes
+                    ? (task.minimum_minutes % 60).toString()
+                    : "15"}
+                  step={1}
+                  type="number"
+                  value={minutes}
+                />
+                <span>minutes</span>
+              </div>
+            </div>
           </div>
           <p className="field-hint">
-            A darker square means more time spent or more of your goal reached.
+            Enter hours, minutes, or both. A darker square means more time spent.
           </p>
           <div className="modal-actions split-actions">
             <div>

@@ -3,6 +3,7 @@ import { ActivityCalendar, type Activity } from "react-activity-calendar";
 type ActivityOverviewProps = {
   activity: Activity[];
   completedToday: number;
+  totalHabits: number;
   streak: number;
   lastSevenCount: number;
 };
@@ -10,9 +11,15 @@ type ActivityOverviewProps = {
 export function ActivityOverview({
   activity,
   completedToday,
+  totalHabits,
   streak,
   lastSevenCount,
 }: ActivityOverviewProps) {
+  const remainingToday = Math.max(0, totalHabits - completedToday);
+  const progress = totalHabits
+    ? Math.round((completedToday / totalHabits) * 100)
+    : 0;
+
   return (
     <section className="activity-card">
       <div className="card-heading">
@@ -63,6 +70,44 @@ export function ActivityOverview({
         <div>
           <strong>{lastSevenCount}</strong>
           <span>goals met this week</span>
+        </div>
+      </div>
+      <div className="today-progress-panel">
+        <div
+          aria-label={`${progress}% of today's habits completed`}
+          className="progress-ring"
+          role="img"
+          style={{
+            background: `conic-gradient(var(--green) ${progress}%, var(--muted) 0)`,
+          }}
+        >
+          <div>
+            <strong>{progress}%</strong>
+            <span>complete</span>
+          </div>
+        </div>
+        <div className="progress-copy">
+          <p className="section-label">TODAY&apos;S PROGRESS</p>
+          <h3>
+            {totalHabits === 0
+              ? "Start with one small promise."
+              : remainingToday === 0
+                ? "Everything is marked for today."
+                : "One small check-in builds momentum."}
+          </h3>
+          <p>
+            {totalHabits === 0
+              ? "Add your first habit when you’re ready."
+              : `${completedToday} completed and ${remainingToday} remaining.`}
+          </p>
+          <div className="progress-counts">
+            <span>
+              <strong>{completedToday}</strong> done
+            </span>
+            <span>
+              <strong>{remainingToday}</strong> remaining
+            </span>
+          </div>
         </div>
       </div>
     </section>

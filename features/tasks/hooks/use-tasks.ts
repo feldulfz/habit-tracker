@@ -8,7 +8,12 @@ import {
 } from "@/shared/lib/supabase/client";
 import { demoTasks, makeDemoCompletions } from "../data/demo";
 import { addDays, localDate } from "../lib/dates";
-import type { Completion, Task, TaskValues } from "../model/types";
+import type {
+  Completion,
+  HabitNote,
+  Task,
+  TaskValues,
+} from "../model/types";
 
 export function useTasks(session: Session | null) {
   const [tasks, setTasks] = useState<Task[]>(
@@ -18,6 +23,7 @@ export function useTasks(session: Session | null) {
   const [completions, setCompletions] = useState<Completion[]>(
     supabaseConfigured ? [] : makeDemoCompletions(),
   );
+  const [habitNotes, setHabitNotes] = useState<HabitNote[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     supabaseConfigured ? null : demoTasks[0].id,
   );
@@ -30,7 +36,7 @@ export function useTasks(session: Session | null) {
     setLoading(true);
     setError("");
     const startDate = localDate(addDays(new Date(), -364));
-    const [taskResult, completionResult] = await Promise.all([
+    const [taskResult, completionResult, noteResult] = await Promise.all([
       supabase
         .from("tasks")
         .select("*")
@@ -40,12 +46,17 @@ export function useTasks(session: Session | null) {
         .select("*")
         .gte("completion_date", startDate)
         .order("completion_date", { ascending: true }),
+      supabase
+        .from("habit_notes")
+        .select("*")
+        .order("updated_at", { ascending: false }),
     ]);
 
-    if (taskResult.error || completionResult.error) {
+    if (taskResult.error || completionResult.error || noteResult.error) {
       setError(
         taskResult.error?.message ??
           completionResult.error?.message ??
+          noteResult.error?.message ??
           "Your tasks could not be loaded.",
       );
     } else {
@@ -54,6 +65,7 @@ export function useTasks(session: Session | null) {
       setTasks(nextTasks);
       setArchivedTasks(allTasks.filter((task) => task.archived_at));
       setCompletions((completionResult.data ?? []) as Completion[]);
+      setHabitNotes((noteResult.data ?? []) as HabitNote[]);
       setSelectedTaskId((current) =>
         nextTasks.some((task) => task.id === current)
           ? current
@@ -241,6 +253,101 @@ export function useTasks(session: Session | null) {
     return true;
   }
 
+  async function addHabitNote(taskId: string, body: string) {
+    const trimmedBody = body.trim();
+    if (!trimmedBody) return false;
+
+    setError("");
+    if (!supabase || !session) {
+      const timestamp = new Date().toISOString();
+      setHabitNotes((current) => [
+        {
+          id: crypto.randomUUID(),
+          task_id: taskId,
+          user_id: "demo",
+          body: trimmedBody,
+          created_at: timestamp,
+          updated_at: timestamp,
+        },
+        ...current,
+      ]);
+      return true;
+    }
+
+    const { data, error: insertError } = await supabase
+      .from("habit_notes")
+      .insert({
+        task_id: taskId,
+        user_id: session.user.id,
+        body: trimmedBody,
+      })
+      .select()
+      .single();
+    if (insertError) {
+      setError(insertError.message);
+      return false;
+    }
+
+    setHabitNotes((current) => [data as HabitNote, ...current]);
+    return true;
+  }
+
+  async function updateHabitNote(note: HabitNote, body: string) {
+    const trimmedBody = body.trim();
+    if (!trimmedBody) return false;
+
+    const updatedAt = new Date().toISOString();
+    setError("");
+    if (supabase && session) {
+      const { data, error: updateError } = await supabase
+        .from("habit_notes")
+        .update({ body: trimmedBody, updated_at: updatedAt })
+        .eq("id", note.id)
+        .select()
+        .single();
+      if (updateError) {
+        setError(updateError.message);
+        return false;
+      }
+      setHabitNotes((current) =>
+        current.map((item) =>
+          item.id === note.id ? (data as HabitNote) : item,
+        ),
+      );
+      return true;
+    }
+
+    setHabitNotes((current) =>
+      current.map((item) =>
+        item.id === note.id
+          ? { ...item, body: trimmedBody, updated_at: updatedAt }
+          : item,
+      ),
+    );
+    return true;
+  }
+
+  async function deleteHabitNote(note: HabitNote) {
+    if (!window.confirm("Delete this note?")) return false;
+
+    setError("");
+    if (supabase && session) {
+      const { error: deleteError } = await supabase
+        .from("habit_notes")
+        .delete()
+        .eq("id", note.id);
+      if (deleteError) {
+        setError(deleteError.message);
+        return false;
+      }
+    }
+
+    setHabitNotes((current) =>
+      current.filter((item) => item.id !== note.id),
+    );
+    return true;
+  }
+
   async function archiveTask(task: Task) {
     if (!window.confirm(`Archive “${task.title}”?`)) return;
 
@@ -299,6 +406,7 @@ export function useTasks(session: Session | null) {
     tasks,
     archivedTasks,
     completions,
+    habitNotes,
     selectedTaskId,
     loading,
     error,
@@ -308,6 +416,9 @@ export function useTasks(session: Session | null) {
     updateTask,
     saveToday,
     removeToday,
+    addHabitNote,
+    updateHabitNote,
+    deleteHabitNote,
     archiveTask,
     restoreTask,
   };

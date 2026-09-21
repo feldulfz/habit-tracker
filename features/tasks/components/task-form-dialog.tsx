@@ -16,14 +16,20 @@ export function TaskFormDialog({
 }: TaskFormDialogProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [note, setNote] = useState(task?.note ?? "");
+  const [minimumHours, setMinimumHours] = useState(
+    task?.minimum_minutes
+      ? Math.floor(task.minimum_minutes / 60).toString()
+      : "",
+  );
   const [minimumMinutes, setMinimumMinutes] = useState(
-    task?.minimum_minutes?.toString() ?? "",
+    task?.minimum_minutes ? (task.minimum_minutes % 60).toString() : "",
   );
 
   async function submitTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const minimum = minimumMinutes
-      ? Math.round(Number(minimumMinutes))
+    const hasMinimum = minimumHours !== "" || minimumMinutes !== "";
+    const minimum = hasMinimum
+      ? Math.round(Number(minimumHours || 0) * 60 + Number(minimumMinutes || 0))
       : null;
     if (minimum !== null && (minimum < 1 || minimum > 1440)) return;
     if (await onSubmit({ title, note, minimumMinutes: minimum })) onClose();
@@ -80,22 +86,44 @@ export function TaskFormDialog({
             rows={3}
             value={note}
           />
-          <label htmlFor="minimum-minutes">
-            Minimum time <span>Optional, in minutes</span>
+          <label>
+            Minimum time <span>Optional</span>
           </label>
-          <div className="duration-input">
-            <input
-              id="minimum-minutes"
-              inputMode="numeric"
-              max={1440}
-              min={1}
-              onChange={(event) => setMinimumMinutes(event.target.value)}
-              placeholder="30"
-              step={1}
-              type="number"
-              value={minimumMinutes}
-            />
-            <span>minutes</span>
+          <div className="time-input-grid">
+            <div>
+              <label htmlFor="minimum-hours">Hours</label>
+              <div className="duration-input">
+                <input
+                  id="minimum-hours"
+                  inputMode="numeric"
+                  max={24}
+                  min={0}
+                  onChange={(event) => setMinimumHours(event.target.value)}
+                  placeholder="0"
+                  step={1}
+                  type="number"
+                  value={minimumHours}
+                />
+                <span>hours</span>
+              </div>
+            </div>
+            <div>
+              <label htmlFor="minimum-minutes">Minutes</label>
+              <div className="duration-input">
+                <input
+                  id="minimum-minutes"
+                  inputMode="numeric"
+                  max={59}
+                  min={0}
+                  onChange={(event) => setMinimumMinutes(event.target.value)}
+                  placeholder="30"
+                  step={1}
+                  type="number"
+                  value={minimumMinutes}
+                />
+                <span>minutes</span>
+              </div>
+            </div>
           </div>
           <p className="field-hint">
             Leave this empty for a habit without a minimum time goal.

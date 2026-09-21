@@ -25,6 +25,7 @@ export function DaymarkApp() {
     tasks,
     archivedTasks,
     completions,
+    habitNotes,
     selectedTaskId,
     loading,
     error,
@@ -34,6 +35,9 @@ export function DaymarkApp() {
     updateTask,
     saveToday,
     removeToday,
+    addHabitNote,
+    updateHabitNote,
+    deleteHabitNote,
     archiveTask,
     restoreTask,
   } = useTasks(session);
@@ -273,7 +277,14 @@ export function DaymarkApp() {
                       (item) => item.task_id === selectedTask.id,
                     ).length
                   }
+                  key={selectedTask.id}
+                  notes={habitNotes.filter(
+                    (note) => note.task_id === selectedTask.id,
+                  )}
+                  onAddNote={(body) => addHabitNote(selectedTask.id, body)}
+                  onDeleteNote={deleteHabitNote}
                   onEdit={() => setEditingTask(selectedTask)}
+                  onUpdateNote={updateHabitNote}
                   task={selectedTask}
                   totalMinutes={completions
                     .filter((item) => item.task_id === selectedTask.id)
@@ -285,6 +296,7 @@ export function DaymarkApp() {
                   completedToday={completedToday}
                   lastSevenCount={lastSevenCount}
                   streak={streak}
+                  totalHabits={tasks.length}
                 />
               )}
             </div>
