@@ -1,4 +1,5 @@
 import { Brand } from "@/shared/components/brand";
+import { Button } from "@/components/ui/button";
 
 type LoginScreenProps = {
   error: string;
@@ -16,12 +17,12 @@ export function LoginScreen({ error, onSignIn }: LoginScreenProps) {
           A quiet daily task list with a year of progress built right in. Check
           in, mark it done, and let the days add up.
         </p>
-        <button className="google-button" onClick={onSignIn} type="button">
+        <Button className="google-button" onClick={onSignIn} type="button">
           <span className="google-g" aria-hidden="true">
             G
           </span>
           Continue with Google
-        </button>
+        </Button>
         {error && <p className="error-message">{error}</p>}
         <p className="privacy-note">
           No password to remember. Daymark only uses your Google account to keep

@@ -1,5 +1,26 @@
 import { useState } from "react";
 import { ActivityCalendar, type Activity } from "react-activity-calendar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { HabitNote, Task } from "../model/types";
 
 type TaskDetailProps = {
@@ -70,9 +91,14 @@ export function TaskDetail({
                 ? `${task.minimum_minutes} minute daily minimum`
                 : "No daily minimum"}
             </span>
-            <button className="edit-button" onClick={onEdit} type="button">
+            <Button
+              className="edit-button"
+              onClick={onEdit}
+              type="button"
+              variant="outline"
+            >
               Edit habit
-            </button>
+            </Button>
           </div>
         </div>
         <div className="detail-count">
@@ -118,13 +144,59 @@ export function TaskDetail({
           </div>
           <div className="notes-heading-actions">
             <span>{notes.length} {notes.length === 1 ? "note" : "notes"}</span>
-            <button
-              className="primary-button note-save-button"
-              onClick={() => setShowAddNote(true)}
-              type="button"
+            <Dialog
+              onOpenChange={(open) => {
+                if (open) setShowAddNote(true);
+                else closeAddNote();
+              }}
+              open={showAddNote}
             >
-              ＋ Add note
-            </button>
+              <DialogTrigger
+                render={
+                  <Button className="primary-button note-save-button" />
+                }
+              >
+                ＋ Add note
+              </DialogTrigger>
+              <DialogContent className="modal note-modal sm:max-w-[560px]">
+                <DialogHeader className="gap-0">
+                  <p className="section-label">REFLECTION</p>
+                  <DialogTitle className="text-2xl">
+                    Add an improvement note
+                  </DialogTitle>
+                  <DialogDescription className="modal-intro">
+                    Capture what could make this habit easier or better next time.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={addNote}>
+                  <Label htmlFor={`new-note-${task.id}`}>Note</Label>
+                  <Textarea
+                    autoFocus
+                    id={`new-note-${task.id}`}
+                    maxLength={2000}
+                    onChange={(event) => setNewNote(event.target.value)}
+                    placeholder="Write your reflection…"
+                    required
+                    rows={5}
+                    value={newNote}
+                  />
+                  <p className="note-character-count">{newNote.length}/2000</p>
+                  <div className="modal-actions">
+                    <Button
+                      className="cancel-button"
+                      onClick={closeAddNote}
+                      type="button"
+                      variant="ghost"
+                    >
+                      Cancel
+                    </Button>
+                    <Button className="primary-button" type="submit">
+                      Add note
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -138,7 +210,7 @@ export function TaskDetail({
               <article className="note-item" key={note.id}>
                 {editingNoteId === note.id ? (
                   <>
-                    <textarea
+                    <Textarea
                       aria-label="Edit note"
                       maxLength={2000}
                       onChange={(event) => setEditingBody(event.target.value)}
@@ -146,21 +218,23 @@ export function TaskDetail({
                       value={editingBody}
                     />
                     <div className="note-edit-actions">
-                      <button
+                      <Button
                         className="text-button"
                         onClick={() => setEditingNoteId(null)}
                         type="button"
+                        variant="ghost"
                       >
                         Cancel
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         className="edit-button"
                         disabled={!editingBody.trim()}
                         onClick={() => updateNote(note)}
                         type="button"
+                        variant="outline"
                       >
                         Save changes
-                      </button>
+                      </Button>
                     </div>
                   </>
                 ) : (
@@ -177,23 +251,52 @@ export function TaskDetail({
                   </div>
                   {editingNoteId !== note.id && (
                     <div className="note-actions">
-                      <button
+                      <Button
                         className="text-button"
                         onClick={() => {
                           setEditingNoteId(note.id);
                           setEditingBody(note.body);
                         }}
                         type="button"
+                        variant="ghost"
                       >
                         Edit
-                      </button>
-                      <button
-                        className="delete-note-button"
-                        onClick={() => onDeleteNote(note)}
-                        type="button"
-                      >
-                        Delete
-                      </button>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              className="delete-note-button"
+                              variant="destructive"
+                            />
+                          }
+                        >
+                          Delete
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="modal">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently removes the reflection from this habit.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <div className="modal-actions">
+                            <AlertDialogCancel
+                              className="cancel-button"
+                              variant="ghost"
+                            >
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              className="delete-confirm-button"
+                              onClick={() => onDeleteNote(note)}
+                              variant="destructive"
+                            >
+                              Delete note
+                            </AlertDialogAction>
+                          </div>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </div>
@@ -202,58 +305,6 @@ export function TaskDetail({
           )}
         </div>
       </section>
-      {showAddNote && (
-        <div
-          className="modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) closeAddNote();
-          }}
-          role="presentation"
-        >
-          <section
-            aria-labelledby="add-note-title"
-            aria-modal="true"
-            className="modal note-modal"
-            role="dialog"
-          >
-            <button
-              aria-label="Close note dialog"
-              className="modal-close"
-              onClick={closeAddNote}
-              type="button"
-            >
-              ×
-            </button>
-            <p className="section-label">REFLECTION</p>
-            <h2 id="add-note-title">Add an improvement note</h2>
-            <p className="modal-intro">
-              Capture what could make this habit easier or better next time.
-            </p>
-            <form onSubmit={addNote}>
-              <label htmlFor={`new-note-${task.id}`}>Note</label>
-              <textarea
-                autoFocus
-                id={`new-note-${task.id}`}
-                maxLength={2000}
-                onChange={(event) => setNewNote(event.target.value)}
-                placeholder="Write your reflection…"
-                required
-                rows={5}
-                value={newNote}
-              />
-              <p className="note-character-count">{newNote.length}/2000</p>
-              <div className="modal-actions">
-                <button className="cancel-button" onClick={closeAddNote} type="button">
-                  Cancel
-                </button>
-                <button className="primary-button" type="submit">
-                  Add note
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
-      )}
     </section>
   );
 }

@@ -1,6 +1,16 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { Completion, Task } from "../model/types";
 
 type LogTimeDialogProps = {
@@ -37,41 +47,29 @@ export function LogTimeDialog({
   }
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onClose();
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      role="presentation"
+      open
     >
-      <section
-        aria-labelledby="log-time-title"
-        aria-modal="true"
-        className="modal time-modal"
-        role="dialog"
-      >
-        <button
-          aria-label="Close time dialog"
-          className="modal-close"
-          onClick={onClose}
-          type="button"
-        >
-          ×
-        </button>
-        <p className="section-label">TODAY’S EFFORT</p>
-        <h2 id="log-time-title">Log time for {task.title}</h2>
-        <p className="modal-intro">
-          {task.minimum_minutes
-            ? `Your daily goal is ${task.minimum_minutes} minutes.`
-            : "This habit has no minimum. Every minute still adds to its activity color."}
-        </p>
+      <DialogContent className="modal time-modal sm:max-w-[540px]">
+        <DialogHeader className="gap-0">
+          <p className="section-label">TODAY’S EFFORT</p>
+          <DialogTitle>Log time for {task.title}</DialogTitle>
+          <DialogDescription className="modal-intro">
+            {task.minimum_minutes
+              ? `Your daily goal is ${task.minimum_minutes} minutes.`
+              : "This habit has no minimum. Every minute still adds to its activity color."}
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={submitTime}>
-          <label>Actual time spent</label>
+          <Label>Actual time spent</Label>
           <div className="time-input-grid">
             <div>
-              <label htmlFor="actual-hours">Hours</label>
+              <Label htmlFor="actual-hours">Hours</Label>
               <div className="duration-input duration-input-large">
-                <input
+                <Input
                   autoFocus
                   id="actual-hours"
                   inputMode="numeric"
@@ -89,9 +87,9 @@ export function LogTimeDialog({
               </div>
             </div>
             <div>
-              <label htmlFor="actual-minutes">Minutes</label>
+              <Label htmlFor="actual-minutes">Minutes</Label>
               <div className="duration-input duration-input-large">
-                <input
+                <Input
                   id="actual-minutes"
                   inputMode="numeric"
                   max={59}
@@ -114,26 +112,32 @@ export function LogTimeDialog({
           <div className="modal-actions split-actions">
             <div>
               {completion && (
-                <button
+                <Button
                   className="danger-button"
                   onClick={removeTime}
                   type="button"
+                  variant="destructive"
                 >
                   Remove today’s log
-                </button>
+                </Button>
               )}
             </div>
             <div className="action-group">
-              <button className="cancel-button" onClick={onClose} type="button">
+              <Button
+                className="cancel-button"
+                onClick={onClose}
+                type="button"
+                variant="ghost"
+              >
                 Cancel
-              </button>
-              <button className="primary-button" type="submit">
+              </Button>
+              <Button className="primary-button" type="submit">
                 Save time
-              </button>
+              </Button>
             </div>
           </div>
         </form>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -328,8 +328,6 @@ export function useTasks(session: Session | null) {
   }
 
   async function deleteHabitNote(note: HabitNote) {
-    if (!window.confirm("Delete this note?")) return false;
-
     setError("");
     if (supabase && session) {
       const { error: deleteError } = await supabase
@@ -349,8 +347,6 @@ export function useTasks(session: Session | null) {
   }
 
   async function archiveTask(task: Task) {
-    if (!window.confirm(`Archive “${task.title}”?`)) return;
-
     const archivedAt = new Date().toISOString();
 
     if (supabase && session) {

@@ -1,6 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginScreen } from "@/features/auth/components/login-screen";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 import { Brand } from "@/shared/components/brand";
@@ -124,42 +141,46 @@ export function DaymarkApp() {
             <span className="preview-pill">Preview mode</span>
           )}
           <span className="account-email">{email}</span>
-          <details className="account-menu">
-            <summary aria-label="Open account menu" className="account-trigger">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  aria-label="Open account menu"
+                  className="account-trigger"
+                  size="icon"
+                  variant="ghost"
+                />
+              }
+            >
               <span className="avatar" aria-hidden="true">
                 {avatar ? <img alt="" src={avatar} /> : email[0].toUpperCase()}
               </span>
-            </summary>
-            <div className="account-popover">
-              <button className="account-menu-item" disabled type="button">
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="account-popover">
+              <DropdownMenuItem className="account-menu-item" disabled>
                 <span>Profile</span>
                 <small>Coming soon</small>
-              </button>
-              <button
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 className="account-menu-item"
-                onClick={(event) => {
-                  event.currentTarget.closest("details")?.removeAttribute("open");
-                  setShowArchived(true);
-                }}
-                type="button"
+                onClick={() => setShowArchived(true)}
               >
                 <span>Archived habits</span>
                 <small>{archivedTasks.length}</small>
-              </button>
+              </DropdownMenuItem>
               {supabase && (
                 <>
-                  <div className="account-menu-divider" />
-                  <button
+                  <DropdownMenuSeparator className="account-menu-divider" />
+                  <DropdownMenuItem
                     className="account-menu-item"
                     onClick={signOut}
-                    type="button"
                   >
                     Sign out
-                  </button>
+                  </DropdownMenuItem>
                 </>
               )}
-            </div>
-          </details>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -181,45 +202,52 @@ export function DaymarkApp() {
               Keep today simple. Mark the things that matter.
             </p>
           </div>
-          <button
+          <Button
             className="primary-button compact-add"
             onClick={() => setShowAddTask(true)}
             type="button"
           >
             <span aria-hidden="true">＋</span>
             Add habit
-          </button>
+          </Button>
         </section>
 
         {error && (
-          <div className="error-banner" role="alert">
-            <span>{error}</span>
-            <button onClick={() => setError("")} type="button">
-              Dismiss
-            </button>
-          </div>
+          <Alert className="error-banner" variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+            <AlertAction>
+              <Button
+                className="text-button"
+                onClick={() => setError("")}
+                type="button"
+                variant="ghost"
+              >
+                Dismiss
+              </Button>
+            </AlertAction>
+          </Alert>
         )}
 
-        <div className="mobile-workspace-tabs" role="tablist" aria-label="Dashboard sections">
-          <button
-            aria-selected={mobilePanel === "today"}
-            className={mobilePanel === "today" ? "active" : ""}
-            onClick={() => setMobilePanel("today")}
-            role="tab"
-            type="button"
-          >
-            Today
-          </button>
-          <button
-            aria-selected={mobilePanel === "activity"}
-            className={mobilePanel === "activity" ? "active" : ""}
-            onClick={() => setMobilePanel("activity")}
-            role="tab"
-            type="button"
-          >
-            Activity
-          </button>
-        </div>
+        <Tabs
+          className="mobile-tabs-root"
+          onValueChange={(value) => setMobilePanel(value as "today" | "activity")}
+          value={mobilePanel}
+        >
+          <TabsList aria-label="Dashboard sections" className="mobile-workspace-tabs">
+            <TabsTrigger
+              className={mobilePanel === "today" ? "active" : ""}
+              value="today"
+            >
+              Today
+            </TabsTrigger>
+            <TabsTrigger
+              className={mobilePanel === "activity" ? "active" : ""}
+              value="activity"
+            >
+              Activity
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="workspace">
           <div
@@ -244,29 +272,28 @@ export function DaymarkApp() {
           <section
             className={`workspace-column activity-workspace ${mobilePanel !== "activity" ? "mobile-hidden" : ""}`}
           >
-            <div className="activity-tabs" role="tablist" aria-label="Activity view">
-              <button
-                aria-selected={activityView === "overall"}
-                className={`activity-tab ${activityView === "overall" ? "active" : ""}`}
-                onClick={() => setActivityView("overall")}
-                role="tab"
-                type="button"
-              >
-                Overall
-              </button>
-              {selectedTask && (
-                <button
-                  aria-selected={activityView === "habit"}
-                  className={`activity-tab habit-tab ${activityView === "habit" ? "active" : ""}`}
-                  onClick={() => setActivityView("habit")}
-                  role="tab"
-                  title={selectedTask.title}
-                  type="button"
+            <Tabs
+              onValueChange={(value) => setActivityView(value as "overall" | "habit")}
+              value={activityView}
+            >
+              <TabsList aria-label="Activity view" className="activity-tabs">
+                <TabsTrigger
+                  className={`activity-tab ${activityView === "overall" ? "active" : ""}`}
+                  value="overall"
                 >
-                  {selectedTask.title}
-                </button>
-              )}
-            </div>
+                  Overall
+                </TabsTrigger>
+                {selectedTask && (
+                  <TabsTrigger
+                    className={`activity-tab habit-tab ${activityView === "habit" ? "active" : ""}`}
+                    title={selectedTask.title}
+                    value="habit"
+                  >
+                    {selectedTask.title}
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            </Tabs>
 
             <div className="activity-view">
               {activityView === "habit" && selectedTask ? (
@@ -329,57 +356,42 @@ export function DaymarkApp() {
         />
       )}
 
-      {showArchived && (
-        <div
-          className="modal-backdrop"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) setShowArchived(false);
-          }}
-          role="presentation"
-        >
-          <section
-            aria-labelledby="archived-habits-title"
-            aria-modal="true"
-            className="modal archived-modal"
-            role="dialog"
-          >
-            <button
-              aria-label="Close archived habits"
-              className="modal-close"
-              onClick={() => setShowArchived(false)}
-              type="button"
-            >
-              ×
-            </button>
+      <Dialog
+        onOpenChange={(open) => setShowArchived(open)}
+        open={showArchived}
+      >
+        <DialogContent className="modal archived-modal sm:max-w-[560px]">
+          <DialogHeader className="gap-0">
             <p className="section-label">YOUR ARCHIVE</p>
-            <h2 id="archived-habits-title">Archived habits</h2>
-            <p className="modal-intro">
+            <DialogTitle>Archived habits</DialogTitle>
+            <DialogDescription className="modal-intro">
               Restore a habit to return it to today’s list.
-            </p>
-            {archivedTasks.length === 0 ? (
-              <p className="archived-empty">No archived habits.</p>
-            ) : (
-              <div className="archived-list">
-                {archivedTasks.map((task) => (
-                  <div className="archived-row" key={task.id}>
-                    <div>
-                      <strong>{task.title}</strong>
-                      <span>{task.note || "No notes"}</span>
-                    </div>
-                    <button
-                      className="list-toggle-button"
-                      onClick={() => restoreTask(task)}
-                      type="button"
-                    >
-                      Restore
-                    </button>
+            </DialogDescription>
+          </DialogHeader>
+          {archivedTasks.length === 0 ? (
+            <p className="archived-empty">No archived habits.</p>
+          ) : (
+            <div className="archived-list">
+              {archivedTasks.map((task) => (
+                <div className="archived-row" key={task.id}>
+                  <div>
+                    <strong>{task.title}</strong>
+                    <span>{task.note || "No notes"}</span>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
+                  <Button
+                    className="list-toggle-button"
+                    onClick={() => restoreTask(task)}
+                    type="button"
+                    variant="outline"
+                  >
+                    Restore
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

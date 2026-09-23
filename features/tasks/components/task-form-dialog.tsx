@@ -1,6 +1,17 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { Task, TaskValues } from "../model/types";
 
 type TaskFormDialogProps = {
@@ -38,35 +49,23 @@ export function TaskFormDialog({
   const editing = Boolean(task);
 
   return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onClose();
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      role="presentation"
+      open
     >
-      <section
-        aria-labelledby="task-form-title"
-        aria-modal="true"
-        className="modal"
-        role="dialog"
-      >
-        <button
-          aria-label="Close task dialog"
-          className="modal-close"
-          onClick={onClose}
-          type="button"
-        >
-          ×
-        </button>
-        <p className="section-label">A DAILY PROMISE</p>
-        <h2 id="task-form-title">{editing ? "Edit habit" : "Add a habit"}</h2>
-        <p className="modal-intro">
-          Set an optional daily time goal. You can still record partial effort.
-        </p>
+      <DialogContent className="modal sm:max-w-[500px]">
+        <DialogHeader className="gap-0">
+          <p className="section-label">A DAILY PROMISE</p>
+          <DialogTitle>{editing ? "Edit habit" : "Add a habit"}</DialogTitle>
+          <DialogDescription className="modal-intro">
+            Set an optional daily time goal. You can still record partial effort.
+          </DialogDescription>
+        </DialogHeader>
         <form onSubmit={submitTask}>
-          <label htmlFor="task-title">Habit title</label>
-          <input
+          <Label htmlFor="task-title">Habit title</Label>
+          <Input
             autoFocus
             id="task-title"
             maxLength={80}
@@ -75,10 +74,10 @@ export function TaskFormDialog({
             required
             value={title}
           />
-          <label htmlFor="task-note">
+          <Label htmlFor="task-note">
             Notes <span>Optional</span>
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="task-note"
             maxLength={240}
             onChange={(event) => setNote(event.target.value)}
@@ -86,14 +85,14 @@ export function TaskFormDialog({
             rows={3}
             value={note}
           />
-          <label>
+          <Label>
             Minimum time <span>Optional</span>
-          </label>
+          </Label>
           <div className="time-input-grid">
             <div>
-              <label htmlFor="minimum-hours">Hours</label>
+              <Label htmlFor="minimum-hours">Hours</Label>
               <div className="duration-input">
-                <input
+                <Input
                   id="minimum-hours"
                   inputMode="numeric"
                   max={24}
@@ -108,9 +107,9 @@ export function TaskFormDialog({
               </div>
             </div>
             <div>
-              <label htmlFor="minimum-minutes">Minutes</label>
+              <Label htmlFor="minimum-minutes">Minutes</Label>
               <div className="duration-input">
-                <input
+                <Input
                   id="minimum-minutes"
                   inputMode="numeric"
                   max={59}
@@ -129,15 +128,20 @@ export function TaskFormDialog({
             Leave this empty for a habit without a minimum time goal.
           </p>
           <div className="modal-actions">
-            <button className="cancel-button" onClick={onClose} type="button">
+            <Button
+              className="cancel-button"
+              onClick={onClose}
+              type="button"
+              variant="ghost"
+            >
               Cancel
-            </button>
-            <button className="primary-button" type="submit">
+            </Button>
+            <Button className="primary-button" type="submit">
               {editing ? "Save changes" : "Add daily habit"}
-            </button>
+            </Button>
           </div>
         </form>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

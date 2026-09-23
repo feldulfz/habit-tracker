@@ -1,6 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { isGoalMet } from "../lib/activity";
 import type { Completion, Task } from "../model/types";
 
@@ -67,39 +87,66 @@ export function TaskList({
         className={`task-row ${done ? "task-done" : ""} ${partial ? "task-partial" : ""} ${selected ? "task-selected" : ""}`}
         key={task.id}
       >
-        <button
+        <Button
           aria-label={`Log time for ${task.title}`}
           aria-pressed={done}
           className="check-button"
           onClick={() => onLogTime(task)}
           type="button"
+          variant="ghost"
         >
           <span aria-hidden="true">{done ? "✓" : partial ? "·" : ""}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           className="task-copy"
           onClick={() => onSelectTask(task.id)}
           type="button"
+          variant="ghost"
         >
           <strong>{task.title}</strong>
           <span>{task.note || "Click to see this habit’s history"}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           className="task-status"
           onClick={() => onLogTime(task)}
           type="button"
+          variant="ghost"
         >
           {status}
-        </button>
-        <button
-          aria-label={`Archive ${task.title}`}
-          className="more-button"
-          onClick={() => onArchiveTask(task)}
-          title="Archive habit"
-          type="button"
-        >
-          ···
-        </button>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button
+                aria-label={`Archive ${task.title}`}
+                className="more-button"
+                title="Archive habit"
+                variant="ghost"
+              />
+            }
+          >
+            ···
+          </AlertDialogTrigger>
+          <AlertDialogContent className="modal">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Archive {task.title}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This habit will leave today’s list. You can restore it from the account menu.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="modal-actions">
+              <AlertDialogCancel className="cancel-button" variant="ghost">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="primary-button"
+                onClick={() => onArchiveTask(task)}
+              >
+                Archive habit
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   };
@@ -129,9 +176,9 @@ export function TaskList({
           <span className="empty-mark">✓</span>
           <h3>Your list is clear.</h3>
           <p>Add one small thing you want to return to each day.</p>
-          <button className="secondary-button" onClick={onAddTask} type="button">
+          <Button className="secondary-button" onClick={onAddTask} type="button">
             Add your first habit
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -140,10 +187,10 @@ export function TaskList({
           >
             {tasks.length >= 6 && (
               <>
-                <label className="sr-only" htmlFor="habit-search">
+                <Label className="sr-only" htmlFor="habit-search">
                   Search habits
-                </label>
-                <input
+                </Label>
+                <Input
                   id="habit-search"
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search habits"
@@ -152,22 +199,35 @@ export function TaskList({
                 />
               </>
             )}
-            <label className="sr-only" htmlFor="habit-filter">
+            <Label className="sr-only" htmlFor="habit-filter">
               Filter habits
-            </label>
-            <select
-              aria-label="Filter habits"
-              id="habit-filter"
-              onChange={(event) => {
-                setFilter(event.target.value as HabitFilter);
+            </Label>
+            <Select
+              onValueChange={(value) => {
+                setFilter(value as HabitFilter);
                 setExpanded(false);
               }}
               value={filter}
             >
-              <option value="incomplete">Not completed</option>
-              <option value="completed">Completed</option>
-              <option value="all">All habits</option>
-            </select>
+              <SelectTrigger
+                aria-label="Filter habits"
+                className="habit-filter-trigger"
+                id="habit-filter"
+              >
+                <SelectValue>
+                  {filter === "incomplete"
+                    ? "Not completed"
+                    : filter === "completed"
+                      ? "Completed"
+                      : "All habits"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="incomplete">Not completed</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="all">All habits</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="task-list-body">
             {visibleTasks.length > 0 && (
@@ -177,26 +237,28 @@ export function TaskList({
             {hiddenTaskCount > 0 && !normalizedQuery && (
               <div className="task-list-footer">
                 <span>{hiddenTaskCount} more habits</span>
-                <button
+                <Button
                   className="list-toggle-button"
                   onClick={() => setExpanded(true)}
                   type="button"
+                  variant="outline"
                 >
                   Show all
-                </button>
+                </Button>
               </div>
             )}
 
             {expanded && filteredTasks.length > 10 && !normalizedQuery && (
               <div className="task-list-footer compact-footer">
                 <span>{filteredTasks.length} habits</span>
-                <button
+                <Button
                   className="list-toggle-button"
                   onClick={() => setExpanded(false)}
                   type="button"
+                  variant="outline"
                 >
                   Show less
-                </button>
+                </Button>
               </div>
             )}
 
