@@ -37,7 +37,17 @@ import { TaskDetail } from "./task-detail";
 import { TaskList } from "./task-list";
 
 export function DaymarkApp() {
-  const { session, authReady, authError, signIn, signOut } = useAuth();
+  const {
+    session,
+    authReady,
+    authError,
+    authMessage,
+    authLoading,
+    signInWithGoogle,
+    signInWithPassword,
+    signUp,
+    signOut,
+  } = useAuth();
   const {
     tasks,
     archivedTasks,
@@ -124,7 +134,16 @@ export function DaymarkApp() {
   }
 
   if (supabaseConfigured && !session) {
-    return <LoginScreen error={authError} onSignIn={signIn} />;
+    return (
+      <LoginScreen
+        error={authError}
+        loading={authLoading}
+        message={authMessage}
+        onGoogleSignIn={signInWithGoogle}
+        onPasswordSignIn={signInWithPassword}
+        onSignUp={signUp}
+      />
+    );
   }
 
   const email = session?.user.email ?? demoUser;
