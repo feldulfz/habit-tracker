@@ -9,9 +9,12 @@ export function Brand({ large = false }: BrandProps) {
       href="/"
       aria-label="Daymark home"
     >
-      <span className="brand-mark" aria-hidden="true">
-        D
-      </span>
+      <img
+        alt=""
+        aria-hidden="true"
+        className="brand-mark"        
+        src="/daymark-logo.gif"        
+      />
       <span>Daymark</span>
     </a>
   );

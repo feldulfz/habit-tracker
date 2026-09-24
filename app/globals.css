@@ -147,16 +147,10 @@ textarea:focus-visible {
 }
 
 .brand-mark {
-  display: grid;
   width: 30px;
   height: 30px;
-  place-items: center;
-  border-radius: 9px 9px 9px 2px;
-  background: var(--green);
-  color: var(--white);
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 16px;
-  font-weight: 700;
+  flex: none;
+  object-fit: contain;
 }
 
 .account {
@@ -2102,4 +2096,14 @@ textarea:focus-visible {
 
 .modal form > label:first-child {
   margin-top: 0;
+}
+
+.brand-mark {
+  width: 30px;
+  height: 30px;
+}
+
+.brand-large .brand-mark {
+  width: 42px;
+  height: 42px;
 }
