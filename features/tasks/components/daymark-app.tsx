@@ -66,6 +66,7 @@ export function DaymarkApp() {
     updateHabitNote,
     deleteHabitNote,
     archiveTask,
+    reorderTasks,
     restoreTask,
   } = useTasks(session);
   const [showAddTask, setShowAddTask] = useState(false);
@@ -277,6 +278,7 @@ export function DaymarkApp() {
               onAddTask={() => setShowAddTask(true)}
               onArchiveTask={archiveTask}
               onLogTime={setLoggingTask}
+              onReorderTasks={reorderTasks}
               onSelectTask={(taskId) => {
                 setSelectedTaskId(taskId);
                 setActivityView("habit");

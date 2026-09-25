@@ -4,6 +4,7 @@ export type Task = {
   title: string;
   note: string | null;
   minimum_minutes: number | null;
+  sort_order: number;
   created_at: string;
   archived_at: string | null;
 };

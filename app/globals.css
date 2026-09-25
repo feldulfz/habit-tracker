@@ -572,16 +572,6 @@ textarea:focus-visible {
   margin-top: 12px;
 }
 
-.task-list-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 8px 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
 .list-toggle-button {
   min-height: 36px;
   padding: 0 12px;
@@ -608,14 +598,42 @@ textarea:focus-visible {
 }
 
 .task-row {
+  position: relative;
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto 36px;
+  grid-template-columns: 26px 38px minmax(0, 1fr) auto 36px;
   align-items: center;
   gap: 10px;
   min-height: 78px;
   padding: 10px 8px;
   border-bottom: 1px solid var(--line);
+  cursor: grab;
   transition: background 140ms ease;
+}
+
+.drag-handle {
+  width: 26px;
+  height: 34px;
+  padding: 0;
+  color: #8c959f;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-dragging {
+  z-index: 5;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 14px 30px rgba(31, 35, 40, 0.18);
+  opacity: 0.95;
+}
+
+.task-dragging,
+.task-dragging * {
+  cursor: grabbing !important;
 }
 
 .task-row:hover,
@@ -1574,10 +1592,6 @@ textarea:focus-visible {
   padding: 6px;
 }
 
-.compact-footer {
-  padding-top: 10px;
-}
-
 .activity-workspace {
   display: flex;
   height: 100%;
@@ -1924,12 +1938,7 @@ textarea:focus-visible {
   }
 
   .task-row {
-    grid-template-columns: 34px minmax(0, 1fr) 32px;
-  }
-
-  .task-list-footer {
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 26px 34px minmax(0, 1fr) 32px;
   }
 
   .task-status {

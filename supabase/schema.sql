@@ -15,6 +15,7 @@ create table public.tasks (
     minimum_minutes is null
     or minimum_minutes between 1 and 1440
   ),
+  sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   archived_at timestamptz
 );
@@ -40,6 +41,9 @@ create table public.habit_notes (
 
 create index tasks_user_id_idx
   on public.tasks (user_id, created_at);
+
+create index tasks_user_sort_idx
+  on public.tasks (user_id, archived_at, sort_order, created_at);
 
 create index task_completions_user_date_idx
   on public.task_completions (user_id, completion_date);
@@ -136,3 +140,46 @@ grant usage on schema public to authenticated;
 grant select, insert, update, delete on table public.tasks to authenticated;
 grant select, insert, update, delete on table public.task_completions to authenticated;
 grant select, insert, update, delete on table public.habit_notes to authenticated;
+
+create or replace function public.swap_task_order(
+  first_task_id uuid,
+  second_task_id uuid
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  first_order integer;
+  second_order integer;
+begin
+  if first_task_id = second_task_id then
+    return;
+  end if;
+
+  select sort_order into first_order
+  from public.tasks
+  where id = first_task_id and user_id = auth.uid()
+  for update;
+
+  select sort_order into second_order
+  from public.tasks
+  where id = second_task_id and user_id = auth.uid()
+  for update;
+
+  if first_order is null or second_order is null then
+    raise exception 'Task not found';
+  end if;
+
+  update public.tasks
+  set sort_order = case id
+    when first_task_id then second_order
+    when second_task_id then first_order
+  end
+  where user_id = auth.uid()
+    and id in (first_task_id, second_task_id);
+end;
+$$;
+
+grant execute on function public.swap_task_order(uuid, uuid) to authenticated;

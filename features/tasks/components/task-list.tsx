@@ -1,6 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  rectSwappingStrategy,
+  sortableKeyboardCoordinates,
+  SortableContext,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,11 +49,58 @@ type TaskListProps = {
   loading: boolean;
   onAddTask: () => void;
   onArchiveTask: (task: Task) => void;
+  onReorderTasks: (firstTaskId: string, secondTaskId: string) => void;
   onSelectTask: (taskId: string) => void;
   onLogTime: (task: Task) => void;
 };
 
 type HabitFilter = "incomplete" | "completed" | "all";
+
+function SortableTaskRow({
+  children,
+  className,
+  task,
+}: {
+  children: ReactNode;
+  className: string;
+  task: Task;
+}) {
+  const {
+    attributes,
+    isDragging,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: task.id });
+  const { onKeyDown, ...rowListeners } = listeners ?? {};
+
+  return (
+    <div
+      className={`${className} ${isDragging ? "task-dragging" : ""}`}
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      {...rowListeners}
+    >
+      <Button
+        aria-label={`Reorder ${task.title}`}
+        className="drag-handle"
+        size="icon-sm"
+        title="Drag to reorder. Press Space, then use the arrow keys, to reorder with a keyboard."
+        type="button"
+        variant="ghost"
+        {...attributes}
+        onKeyDown={onKeyDown}
+      >
+        <GripVertical />
+      </Button>
+      {children}
+    </div>
+  );
+}
 
 export function TaskList({
   tasks,
@@ -44,12 +109,19 @@ export function TaskList({
   loading,
   onAddTask,
   onArchiveTask,
+  onReorderTasks,
   onSelectTask,
   onLogTime,
 }: TaskListProps) {
   const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState(false);
   const [filter, setFilter] = useState<HabitFilter>("incomplete");
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 6 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const isDone = (task: Task) => {
     const completion = todayCompletions.get(task.id);
     return completion ? isGoalMet(completion, task) : false;
@@ -62,12 +134,16 @@ export function TaskList({
   const matchesFilter = (task: Task) =>
     filter === "all" ||
     (filter === "completed" ? isDone(task) : !isDone(task));
-  const filteredTasks = tasks
-    .filter((task) => matchesFilter(task) && matchesQuery(task))
-    .sort((first, second) => Number(isDone(first)) - Number(isDone(second)));
-  const visibleTasks =
-    expanded || normalizedQuery ? filteredTasks : filteredTasks.slice(0, 10);
-  const hiddenTaskCount = filteredTasks.length - visibleTasks.length;
+  const filteredTasks = tasks.filter(
+    (task) => matchesFilter(task) && matchesQuery(task),
+  );
+  const visibleTasks = filteredTasks;
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) {
+      onReorderTasks(String(active.id), String(over.id));
+    }
+  };
 
   const renderTask = (task: Task) => {
     const completion = todayCompletions.get(task.id);
@@ -83,9 +159,10 @@ export function TaskList({
         : "No minimum";
 
     return (
-      <div
+      <SortableTaskRow
         className={`task-row ${done ? "task-done" : ""} ${partial ? "task-partial" : ""} ${selected ? "task-selected" : ""}`}
         key={task.id}
+        task={task}
       >
         <Button
           aria-label={`Log time for ${task.title}`}
@@ -147,7 +224,7 @@ export function TaskList({
             </div>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      </SortableTaskRow>
     );
   };
 
@@ -205,7 +282,6 @@ export function TaskList({
             <Select
               onValueChange={(value) => {
                 setFilter(value as HabitFilter);
-                setExpanded(false);
               }}
               value={filter}
             >
@@ -231,35 +307,18 @@ export function TaskList({
           </div>
           <div className="task-list-body">
             {visibleTasks.length > 0 && (
-              <div className="task-list">{visibleTasks.map(renderTask)}</div>
-            )}
-
-            {hiddenTaskCount > 0 && !normalizedQuery && (
-              <div className="task-list-footer">
-                <span>{hiddenTaskCount} more habits</span>
-                <Button
-                  className="list-toggle-button"
-                  onClick={() => setExpanded(true)}
-                  type="button"
-                  variant="outline"
+              <DndContext
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                sensors={sensors}
+              >
+                <SortableContext
+                  items={visibleTasks.map((task) => task.id)}
+                  strategy={rectSwappingStrategy}
                 >
-                  Show all
-                </Button>
-              </div>
-            )}
-
-            {expanded && filteredTasks.length > 10 && !normalizedQuery && (
-              <div className="task-list-footer compact-footer">
-                <span>{filteredTasks.length} habits</span>
-                <Button
-                  className="list-toggle-button"
-                  onClick={() => setExpanded(false)}
-                  type="button"
-                  variant="outline"
-                >
-                  Show less
-                </Button>
-              </div>
+                  <div className="task-list">{visibleTasks.map(renderTask)}</div>
+                </SortableContext>
+              </DndContext>
             )}
 
             {filteredTasks.length === 0 && (

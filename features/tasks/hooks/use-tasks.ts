@@ -40,6 +40,7 @@ export function useTasks(session: Session | null) {
       supabase
         .from("tasks")
         .select("*")
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true }),
       supabase
         .from("task_completions")
@@ -83,6 +84,11 @@ export function useTasks(session: Session | null) {
   async function addTask(values: TaskValues) {
     const title = values.title.trim();
     if (!title) return false;
+    const sortOrder = Math.max(
+      -1,
+      ...tasks.map((task) => task.sort_order),
+      ...archivedTasks.map((task) => task.sort_order),
+    ) + 1;
 
     setError("");
     if (!supabase || !session) {
@@ -92,6 +98,7 @@ export function useTasks(session: Session | null) {
         title,
         note: values.note.trim() || null,
         minimum_minutes: values.minimumMinutes,
+        sort_order: sortOrder,
         created_at: new Date().toISOString(),
         archived_at: null,
       };
@@ -107,6 +114,7 @@ export function useTasks(session: Session | null) {
         title,
         note: values.note.trim() || null,
         minimum_minutes: values.minimumMinutes,
+        sort_order: sortOrder,
       })
       .select()
       .single();
@@ -369,14 +377,55 @@ export function useTasks(session: Session | null) {
     setSelectedTaskId(remaining[0]?.id ?? null);
   }
 
+  async function reorderTasks(firstTaskId: string, secondTaskId: string) {
+    if (firstTaskId === secondTaskId) return true;
+
+    const firstIndex = tasks.findIndex((task) => task.id === firstTaskId);
+    const secondIndex = tasks.findIndex((task) => task.id === secondTaskId);
+    if (firstIndex < 0 || secondIndex < 0) return false;
+
+    const previousTasks = tasks;
+    const firstTask = tasks[firstIndex];
+    const secondTask = tasks[secondIndex];
+    const reorderedTasks = [...tasks];
+    reorderedTasks[firstIndex] = {
+      ...secondTask,
+      sort_order: firstTask.sort_order,
+    };
+    reorderedTasks[secondIndex] = {
+      ...firstTask,
+      sort_order: secondTask.sort_order,
+    };
+    setTasks(reorderedTasks);
+    setError("");
+
+    if (!supabase || !session) return true;
+
+    const { error: reorderError } = await supabase.rpc("swap_task_order", {
+      first_task_id: firstTaskId,
+      second_task_id: secondTaskId,
+    });
+    if (reorderError) {
+      setTasks(previousTasks);
+      setError(reorderError.message);
+      return false;
+    }
+    return true;
+  }
+
   async function restoreTask(task: Task) {
     setError("");
-    let restoredTask: Task = { ...task, archived_at: null };
+    const sortOrder = Math.max(-1, ...tasks.map((item) => item.sort_order)) + 1;
+    let restoredTask: Task = {
+      ...task,
+      archived_at: null,
+      sort_order: sortOrder,
+    };
 
     if (supabase && session) {
       const { data, error: restoreError } = await supabase
         .from("tasks")
-        .update({ archived_at: null })
+        .update({ archived_at: null, sort_order: sortOrder })
         .eq("id", task.id)
         .select()
         .single();
@@ -390,11 +439,7 @@ export function useTasks(session: Session | null) {
     setArchivedTasks((current) =>
       current.filter((item) => item.id !== task.id),
     );
-    setTasks((current) =>
-      [...current, restoredTask].sort((first, second) =>
-        first.created_at.localeCompare(second.created_at),
-      ),
-    );
+    setTasks((current) => [...current, restoredTask]);
     setSelectedTaskId((current) => current ?? restoredTask.id);
   }
 
@@ -416,6 +461,7 @@ export function useTasks(session: Session | null) {
     updateHabitNote,
     deleteHabitNote,
     archiveTask,
+    reorderTasks,
     restoreTask,
   };
 }
