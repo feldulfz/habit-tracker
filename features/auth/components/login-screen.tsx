@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Brand } from "@/shared/components/brand";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export function LoginScreen({
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,16 +67,30 @@ export function LoginScreen({
               </div>
               <div className="auth-field">
                 <Label htmlFor="auth-password">Password</Label>
-                <Input
-                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                  id="auth-password"
-                  minLength={8}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="At least 8 characters"
-                  required
-                  type="password"
-                  value={password}
-                />
+                <div className="password-input-wrap">
+                  <Input
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    id="auth-password"
+                    minLength={8}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="At least 8 characters"
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                  />
+                  <Button
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    className="password-toggle"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    size="icon"
+                    title={showPassword ? "Hide password" : "Show password"}
+                    type="button"
+                    variant="ghost"
+                  >
+                    {showPassword ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
               </div>
               <Button className="auth-submit" disabled={loading} type="submit">
                 {loading

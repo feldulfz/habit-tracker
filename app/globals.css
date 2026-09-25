@@ -1255,6 +1255,26 @@ textarea:focus-visible {
   background: white;
 }
 
+.password-input-wrap {
+  position: relative;
+}
+
+.password-input-wrap input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  color: var(--ink-soft);
+  transform: translateY(-50%);
+}
+
+.password-toggle:hover {
+  color: var(--ink);
+}
+
 .auth-submit {
   min-height: 46px;
   margin-top: 2px;
